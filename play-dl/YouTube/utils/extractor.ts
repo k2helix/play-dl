@@ -9,6 +9,10 @@ import { parseAudioFormats } from '../stream';
 interface InfoOptions {
     htmldata?: boolean;
     language?: string;
+    proxy?: {
+        host: string;
+        port: number;
+    }
 }
 
 interface PlaylistOptions {
@@ -145,7 +149,8 @@ export async function video_basic_info(url: string, options: InfoOptions = {}): 
                 'accept-language': options.language || 'en-US;q=0.9'
             },
             cookies: true,
-            cookieJar
+            cookieJar,
+            proxy: options.proxy
         });
     }
     if (body.indexOf('Our systems have detected unusual traffic from your computer network.') !== -1)
@@ -344,7 +349,8 @@ export async function video_stream_info(url: string, options: InfoOptions = {}):
         body = await request(new_url, {
             headers: { 'accept-language': 'en-US,en;q=0.9' },
             cookies: true,
-            cookieJar
+            cookieJar,
+            proxy: options.proxy
         });
     }
     if (body.indexOf('Our systems have detected unusual traffic from your computer network.') !== -1)

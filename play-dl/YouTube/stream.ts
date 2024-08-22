@@ -20,6 +20,10 @@ export interface StreamOptions {
     htmldata?: boolean;
     precache?: number;
     discordPlayerCompatibility?: boolean;
+    proxy?: {
+        host: string;
+        port: number;
+    }
 }
 
 /**
@@ -90,7 +94,7 @@ export async function stream_from_info(
     else final.push(info.format[info.format.length - 1]);
     let type: StreamType =
         final[0].codec === 'opus' && final[0].container === 'webm' ? StreamType.WebmOpus : StreamType.Arbitrary;
-    await request_stream(`https://${new URL(final[0].url).host}/generate_204`);
+    await request_stream(`https://${new URL(final[0].url).host}/generate_204`, { proxy: options.proxy });
     if (type === StreamType.WebmOpus) {
         if (!options.discordPlayerCompatibility) {
             options.seek ??= 0;

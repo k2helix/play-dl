@@ -57,6 +57,10 @@ export class SeekStream {
      */
     private request: IncomingMessage | null;
     /**
+     * Optional proxy for requests.
+     */
+    private proxy: { host: string, port: number } | null;
+    /**
      * YouTube Stream Class constructor
      * @param url Audio Endpoint url.
      * @param type Type of Stream
@@ -89,6 +93,7 @@ export class SeekStream {
         this.header_length = headerLength;
         this.content_length = contentLength;
         this.request = null;
+        this.proxy = options.proxy || null;
         this.timer = new Timer(() => {
             this.timer.reuse();
             this.loop();
@@ -111,7 +116,8 @@ export class SeekStream {
                 const stream = await request_stream(this.url, {
                     headers: {
                         range: `bytes=0-${this.header_length}`
-                    }
+                    },
+                    proxy: this.proxy || undefined
                 }).catch((err: Error) => err);
 
                 if (stream instanceof Error) {
@@ -168,7 +174,7 @@ export class SeekStream {
      * Retry if we get 404 or 403 Errors.
      */
     private async retry() {
-        const info = await video_stream_info(this.video_url);
+        const info = await video_stream_info(this.video_url, { proxy: this.proxy || undefined });
         const audioFormat = parseAudioFormats(info.format);
         this.url = audioFormat[this.quality].url;
     }
@@ -197,7 +203,8 @@ export class SeekStream {
         const stream = await request_stream(this.url, {
             headers: {
                 range: `bytes=${this.bytes_count}-${end >= this.content_length ? '' : end}`
-            }
+            },
+            proxy: this.proxy || undefined
         }).catch((err: Error) => err);
         if (stream instanceof Error) {
             this.stream.emit('error', stream);

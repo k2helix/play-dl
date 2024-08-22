@@ -4,12 +4,17 @@ import { URL } from 'node:url';
 import { BrotliDecompress, Deflate, Gunzip, createGunzip, createBrotliDecompress, createDeflate } from 'node:zlib';
 import { cookieHeaders, getCookies } from '../YouTube/utils/cookie';
 import { getRandomUserAgent } from './useragent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 interface RequestOpts extends RequestOptions {
     body?: string;
     method?: 'GET' | 'POST' | 'HEAD';
     cookies?: boolean;
     cookieJar?: { [key: string]: string };
+    proxy?: { 
+        host: string;
+        port: number;
+    }
 }
 
 /**
@@ -187,10 +192,16 @@ export function request_content_length(url: string): Promise<number> {
  * @returns Incoming Message from the https request
  */
 function https_getter(req_url: string, options: RequestOpts = {}): Promise<IncomingMessage> {
+    let agent: HttpsProxyAgent<string> | undefined = undefined;
+
+    if (options.proxy) 
+        agent = new HttpsProxyAgent(`http://${options.proxy.host}:${options.proxy.port}`);
+
     return new Promise((resolve, reject) => {
         const s = new URL(req_url);
         options.method ??= 'GET';
         const req_options: RequestOptions = {
+            agent,
             host: s.hostname,
             path: s.pathname + s.search,
             headers: options.headers ?? {},

@@ -247,6 +247,10 @@ export class Stream {
      */
     private request: IncomingMessage | null;
     /**
+     * Optional proxy for requests.
+     */
+    private proxy?: { host: string, port: number };
+    /**
      * YouTube Stream Class constructor
      * @param url Audio Endpoint url.
      * @param type Type of Stream
@@ -272,6 +276,7 @@ export class Stream {
         this.per_sec_bytes = Math.ceil(contentLength / duration);
         this.content_length = contentLength;
         this.request = null;
+        this.proxy = options.proxy;
         this.timer = new Timer(() => {
             this.timer.reuse();
             this.loop();
@@ -286,7 +291,7 @@ export class Stream {
      * Retry if we get 404 or 403 Errors.
      */
     private async retry() {
-        const info = await video_stream_info(this.video_url);
+        const info = await video_stream_info(this.video_url, { proxy: this.proxy});
         const audioFormat = parseAudioFormats(info.format);
         this.url = audioFormat[this.quality].url;
     }
@@ -315,7 +320,8 @@ export class Stream {
         const stream = await request_stream(this.url, {
             headers: {
                 range: `bytes=${this.bytes_count}-${end >= this.content_length ? '' : end}`
-            }
+            }, 
+            proxy: this.proxy
         }).catch((err: Error) => err);
         if (stream instanceof Error) {
             this.stream.emit('error', stream);
